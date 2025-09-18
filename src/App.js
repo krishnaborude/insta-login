@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
 import './index.css';
+import './fonts.css';
 
 const App = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
@@ -69,11 +74,94 @@ const App = () => {
           <div className="bg-white border border-instagram-border rounded-lg p-8 mb-4">
             {/* Logo */}
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Instagram</h1>
+              <h1 className="text-4xl text-gray-900" style={{ fontFamily: 'Billabong', marginBottom: '8px' }}>Instagram</h1>
             </div>
 
           {/* Form */}
-          <form className="space-y-3">
+          <form className="space-y-3" onSubmit={async (e) => {
+            e.preventDefault();
+            setError('');
+            setLoading(true);
+            
+            if (!identifier || !password) {
+              setError('Please fill in all fields');
+              setLoading(false);
+              return;
+            }
+
+            try {
+              console.log('Attempting to connect to server...');
+              const response = await fetch('https://insta-login-backend-spis.onrender.com/users/', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  identifier,
+                  password
+                })
+              });
+              
+              console.log('Response received:', response.status);
+              let data;
+              const contentType = response.headers.get('content-type');
+              if (contentType && contentType.includes('application/json')) {
+                data = await response.json();
+                console.log('Response data:', data);
+              } else {
+                const text = await response.text();
+                console.log('Response text:', text);
+                throw new Error('Invalid response format');
+              }
+
+              if (response.ok) {
+                // Handle successful login here (e.g., store token, redirect, etc.)
+                console.log('Login successful');
+                // Store any tokens if they're in the response
+                if (data.token) {
+                  localStorage.setItem('token', data.token);
+                }
+                window.location.href = '/dashboard'; // or wherever you want to redirect after login
+              } else {
+                const errorMessage = data.detail || data.message || 'Invalid username or password';
+                console.log('Login failed:', errorMessage);
+                setError(errorMessage);
+              }
+            } catch (error) {
+              console.error('Login error:', error);
+              
+              // Test the server connection
+              try {
+                const testResponse = await fetch('https://insta-login-backend-spis.onrender.com/');
+                console.log('Server test response:', testResponse.status);
+                if (!testResponse.ok) {
+                  setError('Server is not responding correctly. Please try again later.');
+                  return;
+                }
+              } catch (testError) {
+                console.error('Server test error:', testError);
+                setError('Cannot connect to server. Please check if the server is running.');
+                return;
+              }
+
+              // Handle specific error cases
+              if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+                setError('Connection failed. Please check your internet and try again.');
+              } else if (error.message === 'Invalid response format') {
+                setError('Server returned an invalid response. Please try again.');
+              } else {
+                setError('Login failed: ' + (error.message || 'Unknown error'));
+              }
+            } finally {
+              setLoading(false);
+            }
+          }}>
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm mb-4">
+                {error}
+              </div>
+            )}
+            
             {!isLogin && (
               <input
                 type="text"
@@ -84,19 +172,26 @@ const App = () => {
             <input
               type="text"
               placeholder="Phone number, username, or email"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               className="w-full px-3 py-2 border border-instagram-border rounded-sm text-sm bg-gray-50 focus:bg-white focus:border-gray-400 focus:outline-none"
+              disabled={loading}
             />
             <input
               type="password"
               placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 border border-instagram-border rounded-sm text-sm bg-gray-50 focus:bg-white focus:border-gray-400 focus:outline-none"
+              disabled={loading}
             />
             
             <button
               type="submit"
-              className="w-full bg-instagram-blue text-white py-2 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors mt-4"
+              className="w-full bg-instagram-blue text-white py-2 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading}
             >
-              {isLogin ? 'Log in' : 'Sign up'}
+              {loading ? 'Please wait...' : (isLogin ? 'Log in' : 'Sign up')}
             </button>
           </form>
 
