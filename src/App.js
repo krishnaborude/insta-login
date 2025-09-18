@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './index.css';
-import './fonts.css';
+
 
 const App = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -74,7 +74,20 @@ const App = () => {
           <div className="bg-white border border-instagram-border rounded-lg p-8 mb-4">
             {/* Logo */}
             <div className="text-center mb-8">
-              <h1 className="text-4xl text-gray-900" style={{ fontFamily: 'Billabong', marginBottom: '8px' }}>Instagram</h1>
+              <i
+                data-visualcompletion="css-img"
+                aria-label="Instagram"
+                role="img"
+                style={{
+                  backgroundImage: 'url("https://static.cdninstagram.com/rsrc.php/v4/yz/r/H_-3Vh0lHeK.png")',
+                  backgroundPosition: '0px -2959px',
+                  backgroundSize: 'auto',
+                  width: '175px',
+                  height: '51px',
+                  backgroundRepeat: 'no-repeat',
+                  display: 'inline-block'
+                }}
+              ></i>
             </div>
 
           {/* Form */}
